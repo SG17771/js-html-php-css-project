@@ -81,8 +81,8 @@ let blackRightRookMoved = false;
 let lastMoveFrom = "";
 let lastMoveTo = "";
 
-let moveNumber = 0;  // ← ADD THIS
-let score = 0;       // ← AND THIS
+let moveNumber = 0;
+let score = 0;
 
 // TURN TEXT
 function Turn_Order() {
@@ -144,15 +144,22 @@ function isValidMove(fromId, toId, color) {
         if (dx == 0 && dy == dir && to.innerHTML == "") return true;
 
         if (dx == 0 && dy == dir * 2) {
-            if (color == "white" && fr == 2 && to.innerHTML == "") return true;
-            if (color == "black" && fr == 7 && to.innerHTML == "") return true;
+            let middle = String.fromCharCode(fc) + (fr + dir);
+            if (color == "white" && fr == 2 && to.innerHTML == "" && document.getElementById(middle).innerHTML == "") return true;
+            if (color == "black" && fr == 7 && to.innerHTML == "" && document.getElementById(middle).innerHTML == "") return true;
         }
         if (adx == 1 && dy == dir && to.innerHTML != "") return true;
 
         // en passant
         if (adx == 1 && dy == dir && to.innerHTML == "") {
-            if (lastMoveTo != "") {
-                if (lastMoveTo[0] == toId[0]) return true;
+            if (lastMoveTo != "" && lastMoveFrom != "") {
+                let lastFromRow = parseInt(lastMoveFrom[1]);
+                let lastToRow = parseInt(lastMoveTo[1]);
+                let movedTwoRows = Math.abs(lastToRow - lastFromRow) == 2;
+                let sameColumn = lastMoveTo[0] == toId[0];
+                let wasAPawn = document.getElementById(lastMoveTo).innerHTML == "♙";
+                let correctRow = (color == "white" && fr == 5) || (color == "black" && fr == 4);
+                if (movedTwoRows && sameColumn && wasAPawn && correctRow) return true;
             }
         }
         return false;
@@ -165,32 +172,102 @@ function isValidMove(fromId, toId, color) {
     }
     // bishop
     if (piece == "♗") {
-        if (adx == ady) return true;
+        if (adx == ady) {
+            let stepX = dx > 0 ? 1 : -1;
+            let stepY = dy > 0 ? 1 : -1;
+            let c = fc + stepX;
+            let r = fr + stepY;
+            while (c != tc && r != tr) {
+                let id = String.fromCharCode(c) + r;
+                if (document.getElementById(id).innerHTML != "") return false;
+                c += stepX;
+                r += stepY;
+            }
+            return true;
+        }
         return false;
     }
     // rook
     if (piece == "♖") {
-        if (fc == tc || fr == tr) return true;
+        if (fc == tc) {
+            let step = dy > 0 ? 1 : -1;
+            for (let r = fr + step; r != tr; r += step) {
+                let id = String.fromCharCode(fc) + r;
+                if (document.getElementById(id).innerHTML != "") return false;
+            }
+            return true;
+        }
+        if (fr == tr) {
+            let step = dx > 0 ? 1 : -1;
+            for (let c = fc + step; c != tc; c += step) {
+                let id = String.fromCharCode(c) + fr;
+                if (document.getElementById(id).innerHTML != "") return false;
+            }
+            return true;
+        }
         return false;
     }
     // queen
     if (piece == "♕") {
-        if (fc == tc || fr == tr) return true;
-        if (adx == ady) return true;
+        if (fc == tc) {
+            let step = dy > 0 ? 1 : -1;
+            for (let r = fr + step; r != tr; r += step) {
+                let id = String.fromCharCode(fc) + r;
+                if (document.getElementById(id).innerHTML != "") return false;
+            }
+            return true;
+        }
+        if (fr == tr) {
+            let step = dx > 0 ? 1 : -1;
+            for (let c = fc + step; c != tc; c += step) {
+                let id = String.fromCharCode(c) + fr;
+                if (document.getElementById(id).innerHTML != "") return false;
+            }
+            return true;
+        }
+        if (adx == ady) {
+            let stepX = dx > 0 ? 1 : -1;
+            let stepY = dy > 0 ? 1 : -1;
+            let c = fc + stepX;
+            let r = fr + stepY;
+            while (c != tc && r != tr) {
+                let id = String.fromCharCode(c) + r;
+                if (document.getElementById(id).innerHTML != "") return false;
+                c += stepX;
+                r += stepY;
+            }
+            return true;
+        }
         return false;
     }
     // king
     if (piece == "♔") {
         if (adx <= 1 && ady <= 1) return true;
         // castle white
-        if (color == "white" && fromId == "e1") {
-            if (toId == "g1" && whiteKingMoved == false && whiteRightRookMoved == false) return true;
-            if (toId == "c1" && whiteKingMoved == false && whiteLeftRookMoved == false) return true;
+        if (color == "white" && fromId == "e1" && isSquareAttacked("e1", "black") == false) {
+            if (toId == "g1" && whiteKingMoved == false && whiteRightRookMoved == false) {
+                if (document.getElementById("f1").innerHTML == "" && document.getElementById("g1").innerHTML == "") {
+                    if (isSquareAttacked("f1", "black") == false && isSquareAttacked("g1", "black") == false) return true;
+                }
+            }
+            if (toId == "c1" && whiteKingMoved == false && whiteLeftRookMoved == false) {
+                if (document.getElementById("d1").innerHTML == "" && document.getElementById("c1").innerHTML == "" && document.getElementById("b1").innerHTML == "") {
+                    if (isSquareAttacked("d1", "black") == false && isSquareAttacked("c1", "black") == false) return true;
+                }
+            }
         }
         // castle black
-        if (color == "black" && fromId == "e8") {
-            if (toId == "g8" && blackKingMoved == false && blackRightRookMoved == false) return true;
-            if (toId == "c8" && blackKingMoved == false && blackLeftRookMoved == false) return true;
+        if (color == "black" && fromId == "e8" && isSquareAttacked("e8", "white") == false) {
+            if (toId == "g8" && blackKingMoved == false && blackRightRookMoved == false) {
+                if (document.getElementById("f8").innerHTML == "" && document.getElementById("g8").innerHTML == "") {
+                    if (isSquareAttacked("f8", "white") == false && isSquareAttacked("g8", "white") == false) return true;
+                }
+            }
+            if (toId == "c8" && blackKingMoved == false && blackLeftRookMoved == false) {
+                if (document.getElementById("d8").innerHTML == "" && document.getElementById("c8").innerHTML == "" && document.getElementById("b8").innerHTML == "") {
+                    if (isSquareAttacked("d8", "white") == false && isSquareAttacked("c8", "white") == false) return true;
+                }
+            }
         }
         return false;
     }
@@ -294,8 +371,26 @@ function moveLeavesKingInCheck(fromId, toId, color) {
     let oldFrom = from.innerHTML;
     let oldTo = to.innerHTML;
 
+    let oldFromWhite = from.classList.contains("white-piece");
+    let oldFromBlack = from.classList.contains("black-piece");
     let oldToWhite = to.classList.contains("white-piece");
     let oldToBlack = to.classList.contains("black-piece");
+
+    // en passant: find the captured pawn square and remove it temporarily
+    let epSquare = null;
+    let epOldHtml = "";
+    let epOldWhite = false;
+    let epOldBlack = false;
+    if (from.innerHTML == "♙" && fromId[0] != toId[0] && to.innerHTML == "") {
+        let epId = toId[0] + fromId[1];
+        epSquare = document.getElementById(epId);
+        epOldHtml = epSquare.innerHTML;
+        epOldWhite = epSquare.classList.contains("white-piece");
+        epOldBlack = epSquare.classList.contains("black-piece");
+        epSquare.innerHTML = "";
+        epSquare.classList.remove("white-piece");
+        epSquare.classList.remove("black-piece");
+    }
 
     to.innerHTML = from.innerHTML;
     from.innerHTML = "";
@@ -318,13 +413,23 @@ function moveLeavesKingInCheck(fromId, toId, color) {
     from.innerHTML = oldFrom;
     to.innerHTML = oldTo;
 
-    from.classList.add(color + "-piece");
+    from.classList.remove("white-piece");
+    from.classList.remove("black-piece");
+    if (oldFromWhite) from.classList.add("white-piece");
+    if (oldFromBlack) from.classList.add("black-piece");
 
     to.classList.remove("white-piece");
     to.classList.remove("black-piece");
 
     if (oldToWhite) to.classList.add("white-piece");
     if (oldToBlack) to.classList.add("black-piece");
+
+    // restore en passant captured pawn
+    if (epSquare != null) {
+        epSquare.innerHTML = epOldHtml;
+        if (epOldWhite) epSquare.classList.add("white-piece");
+        if (epOldBlack) epSquare.classList.add("black-piece");
+    }
 
     return result;
 }
@@ -368,11 +473,104 @@ function checkGameEnd() {
         }
     }
 }
+// PAWN PROMOTION
+function checkPromotion() {
+    let all = document.querySelectorAll("td");
+    for (let i = 0; i < all.length; i++) {
+        if (all[i].innerHTML == "♙") {
+            let row = parseInt(all[i].id[1]);
+            if (all[i].classList.contains("white-piece") && row == 8) {
+                setPiece(all[i].id, "♕", "white");
+            }
+            if (all[i].classList.contains("black-piece") && row == 1) {
+                setPiece(all[i].id, "♕", "black");
+            }
+        }
+    }
+}
+// BOT MOVE
+function botMove() {
+    let color = "black";
+
+    let all = document.querySelectorAll("td");
+
+    let legalMoves = [];
+
+    for (let i = 0; i < all.length; i++) {
+        if (all[i].classList.contains(color + "-piece") == false) continue;
+
+        for (let j = 0; j < all.length; j++) {
+            if (all[i].id == all[j].id) continue;
+
+            if (isValidMove(all[i].id, all[j].id, color) == false) continue;
+
+            if (moveLeavesKingInCheck(all[i].id, all[j].id, color) == true) continue;
+
+            legalMoves.push({ from: all[i].id, to: all[j].id });
+        }
+    }
+
+    if (legalMoves.length == 0) return;
+
+    let pick = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+
+    let fromId = pick.from;
+    let toId = pick.to;
+
+    let fromSquare = document.getElementById(fromId);
+    let toSquare = document.getElementById(toId);
+
+    let piece = fromSquare.innerHTML;
+
+    // en passant capture
+    if (piece == "♙" && fromId[0] != toId[0] && toSquare.innerHTML == "") {
+        clearSquare(toId[0] + fromId[1]);
+    }
+
+    // move piece
+    toSquare.innerHTML = piece;
+    toSquare.classList.remove("white-piece");
+    toSquare.classList.remove("black-piece");
+    toSquare.classList.add(color + "-piece");
+
+    clearSquare(fromId);
+
+    // castle rook move
+    if (piece == "♔") {
+        if (color == "black") {
+            blackKingMoved = true;
+            if (toId == "g8") {
+                setPiece("f8","♖","black");
+                clearSquare("h8");
+            }
+            if (toId == "c8") {
+                setPiece("d8","♖","black");
+                clearSquare("a8");
+            }
+        }
+    }
+
+    if (fromId == "a8") blackLeftRookMoved = true;
+    if (fromId == "h8") blackRightRookMoved = true;
+
+    lastMoveFrom = fromId;
+    lastMoveTo = toId;
+
+    checkPromotion();
+
+    whiteTurn = true;
+
+    Turn_Order();
+
+    checkGameEnd();
+}
 // CLICK SYSTEM
 let allSquares = document.querySelectorAll("td");
 
 for (let i = 0; i < allSquares.length; i++) {
     allSquares[i].onclick = function () {
+        if (whiteTurn == false) return;
+
         if (selectedSquare == null) {
             if (this.innerHTML == "") return;
             if (whiteTurn == true && this.classList.contains("white-piece")) {
@@ -449,11 +647,15 @@ for (let i = 0; i < allSquares.length; i++) {
 
         selectedSquare = null;
 
-        whiteTurn = !whiteTurn;
+        checkPromotion();
+
+        whiteTurn = false;
 
         Turn_Order();
 
         checkGameEnd();
+
+        setTimeout(botMove, 400);
     };
 }
 // BUTTONS
@@ -501,6 +703,9 @@ ClearBoard.onclick = function () {
 
     lastMoveFrom = "";
     lastMoveTo = "";
+
+    moveNumber = 0;
+    score = 0;
 
     Turn_Order();
 };
@@ -590,4 +795,4 @@ function loadGame() {
     });
 }
 
-console.log("9");
+console.log("11");
