@@ -710,7 +710,6 @@ ClearBoard.onclick = function () {
     Turn_Order();
 };
 function saveGame() {
-
     let data = {};
 
     let squares = document.querySelectorAll("td");
@@ -739,7 +738,6 @@ function saveGame() {
         body: JSON.stringify(data)
     });
 }
-
 function loadGame() {
     fetch("load.php")
     .then(function(response) {
@@ -794,5 +792,4 @@ function loadGame() {
         alert("Game loaded!");
     });
 }
-
 console.log("11");
